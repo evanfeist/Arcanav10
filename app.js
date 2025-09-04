@@ -117,7 +117,13 @@
   btnUseUrl.addEventListener('click',()=>{ const v=signalInput.value.trim(); G.net.url=v||G.net.url; wsConnect(G.net.url); setStatus('Connecting…'); });
   btnHost.addEventListener('click',()=>{ if(!G.net.ws||G.net.ws.readyState!==1){ wsConnect(G.net.url); setTimeout(()=>btnHost.click(),200); return; } const id=randId(); wsSend({type:'host',hostId:id}); hostIdEl.textContent=id; });
   btnJoin.addEventListener('click',()=>{ if(!G.net.ws||G.net.ws.readyState!==1){ wsConnect(G.net.url); setTimeout(()=>btnJoin.click(),200); return; } const id=joinIdInput.value.trim().toUpperCase(); if(!id){log('Enter Host ID');return;} wsSend({type:'join',hostId:id}); });
-  btnStart.addEventListener('click',()=>{ if(!G.net.connected){log('Not connected');return;} if(G.net.role!=='host'){log('Only host');return;} dcSend({kind:'SYNC',state:window.arcana.serialize()}); log('Host sent SYNC'); });
+  btnStart.addEventListener('click', ()=>{
+  if(!G.net.connected){ log('Not connected'); return; }
+  if(G.net.role!=='host'){ log('Only host can start'); return; }
+  arcana.startNew();                            // ← start the game on host
+  dcSend({ kind:'SYNC', state: arcana.serialize() });  // push full snapshot
+  log('Host sent SYNC');
+});
   btnResync.addEventListener('click',()=>{ if(G.net.role!=='host'){log('Only host');return;} dcSend({kind:'SYNC',state:window.arcana.serialize()}); log('Host re-sync'); });
 
   // Small helper for logs from game.js

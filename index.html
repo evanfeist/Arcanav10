@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Arcana — Stage 1–3 (P2P)</title>
+<style>
+  :root{--bg:#0b0f14;--panel:#0f1620;--ink:#e6edf3;--muted:#9fb0c3;--accent:#8fd3ff;--border:#1d2732}
+  html,body{height:100%} body{margin:0;font-family:system-ui,Segoe UI,Roboto,sans-serif;background:#0b0f14;color:var(--ink)}
+  header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 12px;background:#0f1620;border-bottom:1px solid var(--border)}
+  .pill{display:inline-block;padding:3px 8px;border:1px solid #2a3a4e;border-radius:999px;font-size:12px;color:#cfe1f7}
+  .wrap{display:grid;grid-template-columns:260px 1fr 320px;gap:12px;padding:12px}
+  .col{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  .col h2{margin:0;padding:10px 12px;background:#0f1722;color:var(--muted);font-size:13px;border-bottom:1px solid var(--border)}
+  .panel{padding:12px}
+  button{appearance:none;border:1px solid #213041;background:#111925;color:var(--ink);padding:8px 10px;border-radius:10px;font-weight:600;font-size:12px;cursor:pointer}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .hand{display:flex;flex-wrap:wrap;gap:8px;min-height:104px}
+  .cardui{width:64px;height:88px;border-radius:10px;border:1px solid #2a3a4e;background:linear-gradient(180deg,#151e2a,#0f1620);position:relative;cursor:pointer}
+  .cardui.back{cursor:default}
+  .cardui .rank{position:absolute;left:6px;top:4px;font-weight:800;font-size:14px}
+  .cardui .suit{position:absolute;right:6px;bottom:4px;font-size:14px}
+  .cardui .type{position:absolute;left:6px;bottom:4px;font-size:10px;color:var(--muted)}
+  .cardui.selected{outline:2px solid var(--accent)}
+  .log{height:220px;overflow:auto;background:#0c1219;border:1px solid #1e2a38;border-radius:10px;padding:8px;font:12px ui-monospace,monospace;color:#cfe1f7}
+  .piles{display:flex;gap:10px;align-items:center}
+  .cnt{font-size:12px;color:var(--muted)}
+  /* Drawers */
+  .drawer{position:fixed;top:0;right:-420px;width:400px;max-width:90vw;height:100vh;background:#0d1420;border-left:1px solid var(--border);transition:right .25s;z-index:10;display:flex;flex-direction:column}
+  .drawer.open{right:0}
+  .drawer header{display:flex;align-items:center;gap:8px;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)}
+  .drawer .content{padding:12px;overflow:auto}
+  .drawer .footer{margin-top:auto;padding:12px;border-top:1px solid var(--border);display:flex;gap:8px}
+</style>
+</head>
+<body>
+<header>
+  <div class="row">
+    <strong>Arcana (P2P)</strong>
+    <span id="status" class="pill">Idle</span>
+  </div>
+  <div class="row cnt">
+    <span>Draw:<b id="drawTag">0</b></span>
+    <span>Discard:<b id="discardTag">0</b></span>
+    <span>Turn:<b id="turnTag">—</b></span>
+    <span>Score P1:<b id="score1">0</b></span>
+    <span>Score P2:<b id="score2">0</b></span>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- Left: controls -->
+  <div class="col">
+    <h2>Controls</h2>
+    <div class="panel">
+      <div class="row" style="margin-bottom:8px">
+        <input id="signalUrl" style="flex:1;min-width:140px" value="wss://arcana-signal.onrender.com" />
+        <button id="btnUseUrl">Use URL</button>
+      </div>
+      <div class="row" style="margin-bottom:8px">
+        <button id="btnHost">Host</button>
+        <span class="cnt">ID: <b id="hostId">—</b></span>
+      </div>
+      <div class="row" style="margin-bottom:8px">
+        <input id="joinId" placeholder="Enter Host ID" />
+        <button id="btnJoin">Join</button>
+      </div>
+      <div class="row" style="margin-bottom:8px">
+        <button id="btnStart">Start Game</button>
+        <button id="btnResync" disabled>Re-sync</button>
+      </div>
+      <hr>
+      <div class="row" style="margin-bottom:8px">
+        <button id="btnConstruct">Play Construct</button>
+        <button id="btnAction">Play Action (6/7/9)</button>
+        <button id="btnSigil">Play Sigil (J/Q/K)</button>
+        <button id="btnDiscard">Discard</button>
+      </div>
+      <div class="piles cnt">
+        <span>Hands: You(<b id="youCount">0</b>) · Opp(<b id="oppCount">0</b>)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Middle: board -->
+  <div class="col">
+    <h2>Board</h2>
+    <div class="panel">
+      <div class="cnt" style="margin-bottom:6px">Opponent Hand</div>
+      <div id="opponentHand" class="hand"></div>
+      <hr>
+      <div class="cnt" style="margin-bottom:6px">Your Hand</div>
+      <div id="playerHand" class="hand"></div>
+    </div>
+  </div>
+
+  <!-- Right: log -->
+  <div class="col">
+    <h2>Game Log</h2>
+    <div class="panel">
+      <div id="log" class="log"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Drawer: give (for 9) -->
+<div id="giveDrawer" class="drawer" aria-hidden="true">
+  <header><strong>Choose a card to give (9)</strong><button id="giveClose">✕</button></header>
+  <div class="content"><div id="giveList" class="hand"></div></div>
+  <div class="footer">
+    <button id="giveCancel">Cancel</button>
+  </div>
+</div>
+
+<!-- Drawer: Joker Cost -->
+<div id="jokerDrawer" class="drawer" aria-hidden="true">
+  <header><strong>Joker Cost</strong><button id="jokerClose">✕</button></header>
+  <div class="content">
+    <div class="cnt" id="jokerInfo">Select extra cards to discard.</div>
+    <div id="jokerList" class="hand"></div>
+  </div>
+  <div class="footer">
+    <button id="jokerCancel">Cancel</button>
+    <button id="jokerConfirm">Confirm</button>
+  </div>
+</div>
+
+<script src="game.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

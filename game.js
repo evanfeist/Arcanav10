@@ -570,5 +570,7 @@
     window.sendTurn({ type:'DISCARD', from:(pidx===0?'P1':'P2'), payload:{ cardId: sel[0].id } });
     G.selected.clear(); render();
   });
+  
+  document.dispatchEvent(new Event('arcana:ready'));
 
 })();

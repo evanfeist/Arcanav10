@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Arcana – Stage 3 (P2P)</title>
+  <style>
+    :root{
+      --bg:#0b0f14; --panel:#0f1620; --ink:#e8f0f8; --muted:#9fb0c3;
+      --card:#151e2a; --edge:#223040; --accent:#8fd3ff; --gold:#eacb6b;
+      --ok:#b6f5c3; --bad:#ffb3c0; --pill:#0d1a27;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,#0b0f14,#0b0f14 40%,#0e141b);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Noto Sans",sans-serif}
+
+    header{display:flex;align-items:center;gap:14px;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #152231;background:linear-gradient(180deg,#0f1620,#0c1219)}
+    .brand{display:flex;align-items:center;gap:10px}
+    .brand h1{font-size:16px;margin:0;letter-spacing:.3px}
+    .right-head{display:flex;align-items:center;gap:10px}
+
+    .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid #213041;background:#0c1722;color:#cfe1f7;border-radius:999px;font-size:12px;padding:4px 10px}
+    .pill.ok{border-color:#234b32;color:#d9ffea;background:#0d2016}
+    .pill.bad{border-color:#4b1b26;color:#ffd8df;background:#271016}
+
+    .wrap{display:grid;grid-template-columns: 300px 1fr 360px; gap:14px; padding:14px;}
+    .col{background:rgba(255,255,255,.03);border:1px solid #1c2a3a;border-radius:14px;overflow:hidden}
+    .col h2{margin:0;padding:10px 12px;font-size:13px;color:var(--muted);border-bottom:1px solid #182535;background:linear-gradient(180deg,#0f1722,#0d141d)}
+    .panel{padding:12px}
+
+    .scoreboard{display:grid;gap:10px}
+    .scorecard{display:grid;grid-template-columns: 1fr auto;align-items:center;border:1px solid #223144;background:#0c141f;border-radius:12px;padding:10px}
+    .scorecard .title{font-size:13px;color:var(--muted)}
+    .scoreval{font-weight:800;font-size:28px;letter-spacing:.5px}
+    .turnmark{font-size:12px;color:#cfe1f7;border:1px solid #2a3a4e;background:#0c1722;border-radius:8px;padding:2px 6px}
+
+    .counts{display:flex;gap:10px;font-size:12px;color:var(--muted)}
+    .countbox{display:flex;align-items:center;gap:8px;border:1px solid #223144;background:#0c141f;border-radius:10px;padding:6px 8px}
+
+    .controls{display:flex;flex-wrap:wrap;gap:8px}
+    button{appearance:none;border:1px solid #213041;background:#111a26;color:var(--ink);padding:8px 10px;border-radius:10px;font-weight:600;font-size:12px;letter-spacing:.2px;cursor:pointer;transition:transform .04s ease,background .2s ease}
+    button:hover{background:#142235}
+    button:active{transform:translateY(1px)}
+    .btn-ok{border-color:#1f3d2a;background:#0f1f15;color:#bfffd1}
+    .btn-ghost{background:transparent;border-color:#223040;color:var(--muted)}
+    .btn-accent{border-color:#265271;background:#0d2438}
+    .wide{width:100%}
+
+    .net-grid{display:grid;grid-template-columns:1fr auto;gap:8px}
+    input[type=text]{width:100%;background:#0c141f;border:1px solid #223144;border-radius:10px;color:#cfe1f7;padding:8px 10px;font-size:12px;outline:none}
+    input::placeholder{color:#7b93ad}
+
+    /* Board */
+    .board{display:grid;gap:12px}
+    .zone{display:flex;flex-direction:column;gap:8px}
+    .group-title{font-size:12px;color:var(--muted)}
+    .hand{display:flex;flex-wrap:wrap;gap:8px;min-height:106px}
+    .piles{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    .pile{position:relative;width:64px;height:88px;border-radius:10px;background:repeating-linear-gradient(135deg,#0e1520 0px,#0e1520 8px,#0c111a 8px,#0c111a 16px);border:1px solid #223040;box-shadow:0 6px 20px rgba(0,0,0,.35) inset, 0 2px 8px rgba(0,0,0,.25)}
+    .pile:before{content:"";position:absolute;inset:7px;border-radius:6px;border:1px dashed #29394d;opacity:.7}
+    .pile .label{position:absolute;left:50%;bottom:-18px;transform:translateX(-50%);font-size:12px;color:var(--muted)}
+    .count-tag{position:absolute;top:-9px;right:-9px;background:#0c1722;border:1px solid #2a3a4e;border-radius:999px;min-width:26px;height:22px;display:grid;place-items:center;font-size:12px;color:#cfe1f7}
+
+    /* Cards */
+    .cardui{width:64px;height:88px;border-radius:10px;border:1px solid #2a3a4e;background:linear-gradient(180deg,#151e2a,#0f1620);box-shadow:0 4px 14px rgba(0,0,0,.35);position:relative;cursor:pointer;user-select:none;transition:transform .12s ease, box-shadow .12s ease, border-color .12s}
+    .cardui:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,.45)}
+    .cardui.selected{outline:2px solid var(--accent);border-color:#3c6a8f;box-shadow:0 10px 30px rgba(143,211,255,.25)}
+    .cardui .rank{position:absolute;left:6px;top:4px;font-weight:800;font-size:14px}
+    .cardui .suit{position:absolute;right:6px;bottom:4px;font-size:14px}
+    .cardui .type{position:absolute;left:6px;bottom:4px;font-size:10px;color:var(--muted)}
+    .cardui.back{background:repeating-linear-gradient(135deg,#121924 0px,#121924 8px,#0f1520 8px,#0f1520 16px)}
+
+    /* Log */
+    .log{height:260px;overflow:auto;background:#0c1219;border:1px solid #1e2a38;border-radius:10px;padding:8px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:#cfe1f7}
+    .log div{margin:0 0 6px 0;white-space:pre-wrap}
+
+    /* Drawers */
+    .drawer{position:fixed;top:0;right:-420px;width:380px;max-width:90vw;height:100vh;background:linear-gradient(180deg,#0d1420,#0b0f14);border-left:1px solid #1d2732;box-shadow:-24px 0 40px rgba(0,0,0,.4);transition:right .25s ease;z-index:40;display:flex;flex-direction:column}
+    .drawer.open{right:0}
+    .drawer header{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1d2732;padding:10px 12px}
+    .drawer .content{padding:12px;overflow:auto;display:grid;gap:10px}
+    .drawer .footer{margin-top:auto;padding:12px;border-top:1px solid #1d2732;display:flex;gap:8px;justify-content:flex-end}
+    .closex{border:1px solid #283648;border-radius:8px;background:#0a0f16;color:var(--muted);padding:4px 10px;font-size:12px}
+
+    .sep{height:1px;background:#1d2732;margin:8px 0}
+
+    /* Dev fold */
+    .dev-fold{margin-top:10px}
+    .dev-body{display:none;margin-top:8px}
+    .dev-fold.open .dev-body{display:block}
+    .dev-note{font-size:11px;color:var(--muted)}
+
+    /* Rules list */
+    .rule{border:1px solid #1e2a38;border-radius:10px;background:#0c1219;padding:10px}
+    .rule h4{margin:0 0 6px 0;font-size:12px;color:#cfe1f7}
+    .rule p{margin:0;font-size:12px;color:#aecdff}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <h1>Arcana</h1>
+      <span id="status" class="pill">Idle</span>
+    </div>
+    <div class="right-head">
+      <button class="btn-accent" id="btnRules">Rules &amp; Scoring</button>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <!-- LEFT: Scoreboard + Controls -->
+    <div class="col">
+      <h2>Scoreboard</h2>
+      <div class="panel scoreboard">
+        <div class="scorecard">
+          <div>
+            <div class="title">Player 1</div>
+            <div class="counts" style="margin-top:6px;">
+              <span class="countbox">Hand: <b id="youCount">0</b></span>
+              <span class="countbox">Turn: <span id="turnTag" class="turnmark">—</span></span>
+            </div>
+          </div>
+          <div class="scoreval" id="score1">0</div>
+        </div>
+        <div class="scorecard">
+          <div>
+            <div class="title">Player 2</div>
+            <div class="counts" style="margin-top:6px;">
+              <span class="countbox">Hand: <b id="oppCount">0</b></span>
+            </div>
+          </div>
+          <div class="scoreval" id="score2">0</div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="counts">
+          <span class="countbox">Draw: <b id="drawTag">0</b></span>
+          <span class="countbox">Discard: <b id="discardTag">0</b></span>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="controls">
+          <button class="btn-ok" id="btnConstruct">Play Construct</button>
+          <button id="btnAction">Play Action (6/7/9)</button>
+          <button id="btnSigil">Play Sigil (J/Q/K)</button>
+          <button class="btn-ghost" id="btnDiscard">Discard</button>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="panel" style="padding:0">
+          <h2 style="border:none;padding:0 12px 8px 12px;">Network</h2>
+          <div class="panel" style="padding-top:0">
+            <div class="net-grid">
+              <input id="signalUrl" type="text" placeholder="wss://arcana-signal.onrender.com" />
+              <button id="btnUseUrl">Use URL</button>
+            </div>
+            <div class="controls" style="margin-top:8px">
+              <button id="btnHost">Host</button>
+              <span class="pill">Host ID: <b id="hostId">—</b></span>
+            </div>
+            <div class="net-grid" style="margin-top:8px">
+              <input id="joinId" type="text" placeholder="Enter Host ID to join" />
+              <button id="btnJoin">Join</button>
+            </div>
+            <div class="controls" style="margin-top:8px">
+              <button id="btnStart" disabled>Start Game</button>
+              <button id="btnResync" class="btn-ghost" disabled>Re-sync</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <!-- Dev fold (optional) -->
+        <div class="dev-fold" id="devFold">
+          <button class="btn-ghost wide" id="btnDevToggle">Developer Tools</button>
+          <div class="dev-body" id="devBody">
+            <div class="dev-note">Toggles and diagnostics can live here later (seed/snapshot, etc.).</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- MIDDLE: Board -->
+    <div class="col">
+      <h2>Board</h2>
+      <div class="panel board">
+        <div class="zone">
+          <div class="group-title">Opponent Hand</div>
+          <div class="hand" id="opponentHand"></div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="piles">
+          <div class="pile" id="drawPile"><span class="count-tag" id="drawCount"> </span><span class="label">Draw</span></div>
+          <div class="pile" id="discardPile"><span class="count-tag" id="discardCount"> </span><span class="label">Discard</span></div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="zone">
+          <div class="group-title">Your Hand</div>
+          <div class="hand" id="playerHand"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Log -->
+    <div class="col">
+      <h2>Game Log</h2>
+      <div class="panel">
+        <div class="log" id="log"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Drawer: Rules & Scoring -->
+  <div id="rulesDrawer" class="drawer" aria-hidden="true">
+    <header>
+      <h3 style="margin:0;font-size:14px">Rules &amp; Scoring</h3>
+      <button class="closex" id="rulesClose">Close</button>
+    </header>
+    <div class="content">
+      <div class="rule">
+        <h4>Goal</h4>
+        <p>Be first to reach <b>60 points</b>.</p>
+      </div>
+      <div class="rule">
+        <h4>Turn</h4>
+        <p>On your turn, do exactly one: <b>Construct</b>, <b>Action</b> (6/7/9), <b>Sigil</b> (J/Q/K), or <b>Discard</b>. Then draw 1.</p>
+      </div>
+      <div class="rule">
+        <h4>Constructs</h4>
+        <p><b>Pair</b>=2 pts; <b>True Pair</b> (same suit)=5 pts.<br/>
+           <b>Set</b> (3+ of a kind): 3=2×rank+2; 4=3×rank (or 4×rank if all four suits); 5+=3×rank+2.<br/>
+           Sets with jokers: 4→3×rank, 5+→3×rank+2; <i>no suit bonus</i> unless size ≥6. −1 pt per Joker.</p>
+      </div>
+      <div class="rule">
+        <h4>Runs</h4>
+        <p>Same suit, 3+ in sequence (jokers can fill gaps). Score = sum of ranks +1 per card. −1 per Joker. No suit bonus if any Joker used.</p>
+      </div>
+      <div class="rule">
+        <h4>Joker-only</h4>
+        <p>2J=4 pts; 3J=7 pts + draw 3; 4J=15 pts + refill to 7. (Ignore Joker cost/nerf.)</p>
+      </div>
+      <div class="rule">
+        <h4>Suit Bonuses (no Jokers unless noted)</h4>
+        <p>♥: +2 pts · ♦: d6 → steal 1/2/3 pts · ♠: steal up to 2 random cards · ♣: extra turn (max chain 2).<br/>Sets ≥6 cards can still get suit bonus even with Jokers.</p>
+      </div>
+      <div class="rule">
+        <h4>Actions &amp; Ace</h4>
+        <p>6: Draw 2. · 7: Steal random card from opponent. · 9: Swap (give 1, take 1 random).<br/>Ace may block 7/9 (house rules apply in engine).</p>
+      </div>
+    </div>
+    <div class="footer">
+      <button class="closex" id="rulesClose2">Close</button>
+    </div>
+  </div>
+
+  <!-- Drawer: Give (for 9) -->
+  <div id="giveDrawer" class="drawer" aria-hidden="true">
+    <header>
+      <h3 style="margin:0;font-size:14px">Choose a Card to Give (9)</h3>
+      <button class="closex" id="giveClose">Close</button>
+    </header>
+    <div class="content">
+      <div id="giveList" class="hand"></div>
+    </div>
+    <div class="footer">
+      <button class="closex" id="giveCancel">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Drawer: Joker Cost -->
+  <div id="jokerDrawer" class="drawer" aria-hidden="true">
+    <header>
+      <h3 style="margin:0;font-size:14px">Joker Cost</h3>
+      <button class="closex" id="jokerClose">Close</button>
+    </header>
+    <div class="content">
+      <div class="rule">
+        <h4>Extra discards required</h4>
+        <p id="jokerInfo">Select N card(s) from your hand to discard (not in the construct).</p>
+      </div>
+      <div id="jokerList" class="hand"></div>
+    </div>
+    <div class="footer">
+      <button class="closex" id="jokerCancel">Cancel</button>
+      <button class="btn-accent" id="jokerConfirm">Confirm</button>
+    </div>
+  </div>
+
+  <!-- (Optional) Ace drawer shell for future handshake -->
+  <div id="aceModal" class="drawer" aria-hidden="true">
+    <header>
+      <h3 style="margin:0;font-size:14px">Ace Reaction</h3>
+      <button class="closex" id="aceClose">Close</button>
+    </header>
+    <div class="content">
+      <div class="rule">
+        <h4>Use an Ace to Block?</h4>
+        <p id="aceText">Opponent played an action targeting you. Use an Ace?</p>
+      </div>
+    </div>
+    <div class="footer">
+      <button class="closex" id="aceNo">Let it resolve</button>
+      <button class="btn-accent" id="aceYes">Use Ace</button>
+    </div>
+  </div>
+
+  <script>
+    // Right drawer toggles
+    const rulesDrawer = document.getElementById('rulesDrawer');
+    document.getElementById('btnRules').addEventListener('click', ()=>{ rulesDrawer.classList.add('open'); });
+    document.getElementById('rulesClose').addEventListener('click', ()=>{ rulesDrawer.classList.remove('open'); });
+    document.getElementById('rulesClose2').addEventListener('click', ()=>{ rulesDrawer.classList.remove('open'); });
+
+    // Dev fold toggle
+    const devFold = document.getElementById('devFold');
+    document.getElementById('btnDevToggle').addEventListener('click', ()=>{
+      devFold.classList.toggle('open');
+    });
+
+    // Mirror counts onto small tags (kept for compatibility if scripts read them)
+    const drawTag = document.getElementById('drawTag');
+    const discardTag = document.getElementById('discardTag');
+    const drawCount = document.getElementById('drawCount');
+    const discardCount = document.getElementById('discardCount');
+    const syncCounts = ()=>{
+      drawCount.textContent = drawTag.textContent || '0';
+      discardCount.textContent = discardTag.textContent || '0';
+      requestAnimationFrame(syncCounts);
+    };
+    syncCounts();
+  </script>
+
+  <!-- Your game + transport -->
+  <script src="game.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

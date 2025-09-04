@@ -65,6 +65,8 @@
     pendingAce: null // { context:{for:'A7'|'A9'}, resolve:fn, reject:fn }
   };
 
+signalInput.value = G.net.url;
+
   // ======= Utils =======
   function randomHostId(){
     const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s='';

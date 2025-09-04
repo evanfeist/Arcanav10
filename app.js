@@ -54,7 +54,7 @@
   const G = {
     net: {
       ws: null,
-      url: 'wss://YOUR-SIGNALING.example.com', // 👈 Replace with your deployed WSS URL
+      url: 'wss://arcana-signal.onrender.com', // 👈 Replace with your deployed WSS URL
       role: null,        // 'host' | 'guest'
       hostId: null,
       pc: null,

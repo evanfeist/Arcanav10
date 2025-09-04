@@ -93,7 +93,17 @@
   // Packets
   function handlePacket(p){
     if(!p||typeof p!=='object')return;
-    if(p.kind==='SYNC'){ window.arcana.hydrate(p.state); window.arcana.render(); log('RX SYNC ✓'); return; }
+    if(p.kind==='SYNC'){
+  if (p.state && !arcana.started) {
+    arcana.startNew(); // properly init the engine
+  }
+  if (p.state) {
+    arcana.hydrate(p.state);
+    arcana.render();
+  }
+  log('RX SYNC ✓');
+  return;
+}
     if(p.kind==='APPLY'){ if(p.state){ window.arcana.hydrate(p.state); window.arcana.render(); log('APPLY → synced'); } return; }
     if(p.kind==='TURN_ACTION'){ if(G.net.role==='host'){ hostResolveAndBroadcast(p.action); } return; }
   }

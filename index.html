@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src wss://arcana-signal.onrender.com 'self';"
+  />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Arcana – Stage 1–3 (P2P)</title>
+  <style>
+    :root{
+      --bg:#0b0f14; --panel:#0f1620; --ink:#e6edf3; --muted:#9fb0c3;
+      --accent:#8fd3ff; --accent2:#ffd18f; --ok:#9fffb0; --bad:#ffb3c1;
+      --line:#1d2732;
+    }
+    html,body{height:100%;}
+    body{margin:0;background:linear-gradient(180deg,#0b0f14,#0b0f14 40%,#0e141b);color:var(--ink);font-family:System-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Noto Sans",sans-serif}
+    header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#0f1620,#0b0f14)}
+    header h1{margin:0;font-size:18px;letter-spacing:.3px}
+    .wrap{display:grid;grid-template-columns:280px 1fr 340px;gap:14px;padding:14px}
+    .col{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+    .col h2{margin:0;padding:10px 12px;font-size:13px;color:var(--muted);border-bottom:1px solid var(--line);background:linear-gradient(180deg,#0f1722,#0d141d)}
+    .panel{padding:12px}
+
+    /* Score header row */
+    .scorebar{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+    .scorebar .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #2a3a4e;border-radius:999px;padding:3px 8px;background:#0d1622}
+    .pill.ok{border-color:#1f3d2a;color:#bfffd1;background:#0f1f15}
+    .pill.bad{border-color:#4b1b26;color:#ffd0d8;background:#2a0f16}
+
+    /* Buttons */
+    .controls{display:flex;flex-wrap:wrap;gap:8px}
+    button{appearance:none;border:1px solid #213041;background:#111925;color:var(--ink);padding:8px 10px;border-radius:10px;font-weight:600;font-size:12px;letter-spacing:.2px;cursor:pointer;transition:transform .04s ease,background .2s ease,opacity .2s}
+    button:hover{background:#152235}
+    button:active{transform:translateY(1px)}
+    .btn-ghost{background:transparent;border-color:#223040;color:var(--muted)}
+    .btn-accent{border-color:#265271;background:#0d2438}
+    .btn-danger{border-color:#4b1b26;background:#270e13;color:#ffc1ca}
+    .row{display:flex;align-items:center;gap:10px}
+    .grid{display:grid;gap:10px}
+    .grid.two{grid-template-columns:1fr 1fr}
+    .sep{height:1px;background:var(--line);margin:8px 0}
+    .muted{color:var(--muted)}
+    .pill{display:inline-block;border:1px solid #2a3a4e;border-radius:999px;padding:2px 8px;font-size:11px;color:#cfe1f7}
+
+    /* Board */
+    .zone{display:flex;flex-direction:column;gap:8px}
+    .zone .group{display:flex;gap:6px;flex-wrap:wrap}
+    .group-title{font-size:12px;color:var(--muted)}
+    .piles{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    .pile{position:relative;width:64px;height:88px;border-radius:10px;background:repeating-linear-gradient(135deg,#0e1520 0px,#0e1520 8px,#0c111a 8px,#0c111a 16px);border:1px solid #223040;box-shadow:0 6px 20px rgba(0,0,0,.35) inset, 0 2px 8px rgba(0,0,0,.25)}
+    .pile:before{content:"";position:absolute;inset:7px;border-radius:6px;border:1px dashed #29394d;opacity:.7}
+    .pile .label{position:absolute;left:50%;bottom:-18px;transform:translateX(-50%);font-size:12px;color:var(--muted)}
+    .count-tag{position:absolute;top:-9px;right:-9px;background:#0c1722;border:1px solid #2a3a4e;border-radius:999px;min-width:26px;height:22px;display:grid;place-items:center;font-size:12px;color:#cfe1f7}
+
+    /* Cards: polished readability + watermark */
+    .hand{display:flex;flex-wrap:wrap;gap:8px;min-height:106px}
+    .cardui{
+      position:relative;width:64px;height:88px;border-radius:10px;
+      border:1px solid #2a3a4e;background:linear-gradient(180deg,#151e2a,#0f1620);
+      box-shadow:0 4px 14px rgba(0,0,0,.35);user-select:none;cursor:pointer;
+      transition:transform .12s, box-shadow .12s, border-color .12s;
+    }
+    .cardui:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,.45)}
+    .cardui.selected{outline:2px solid var(--accent);border-color:#3c6a8f;box-shadow:0 10px 30px rgba(143,211,255,.25)}
+    .cardui .rank{position:absolute;left:6px;top:4px;font-weight:800;font-size:14px;color:#eaf1f9;text-shadow:0 1px 1px rgba(0,0,0,.6)}
+    .cardui .suit{position:absolute;right:6px;bottom:4px;font-size:14px;color:#cfe1f7}
+    .cardui .type{position:absolute;left:6px;bottom:4px;font-size:10px;color:#9fb0c3}
+    .cardui::after{
+      content: attr(data-suit);
+      position:absolute; right:6px; top:2px; font-size:46px; line-height:1; pointer-events:none;
+      opacity:.08; filter: drop-shadow(0 2px 2px rgba(0,0,0,.35));
+    }
+    .cardui.back{background:repeating-linear-gradient(135deg,#121924 0px,#121924 8px,#0f1520 8px,#0f1520 16px)}
+
+    /* Logs */
+    .log{height:240px;overflow:auto;background:#0c1219;border:1px solid #1e2a38;border-radius:10px;padding:8px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:#cfe1f7}
+    .log div{margin:0 0 6px 0;white-space:pre-wrap}
+
+    /* Drawers / Modals */
+    .drawer{position:fixed;top:0;right:-420px;width:400px;max-width:90vw;height:100vh;background:linear-gradient(180deg,#0d1420,#0b0f14);border-left:1px solid var(--line);box-shadow:-24px 0 40px rgba(0,0,0,.4);transition:right .25s ease;z-index:40;display:flex;flex-direction:column}
+    .drawer.open{right:0}
+    .drawer header{display:flex;align-items:center;gap:8px;justify-content:space-between;padding:12px;border-bottom:1px solid var(--line)}
+    .drawer .content{padding:12px;overflow:auto}
+    .drawer .footer{margin-top:auto;padding:12px;border-top:1px solid var(--line);display:flex;gap:8px}
+    .closex{border:1px solid #283648;border-radius:8px;background:#0a0f16;color:var(--muted);padding:4px 8px;font-size:12px}
+
+    /* Ace modal (center) */
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(7,10,14,.6);z-index:50}
+    .modal.open{display:flex}
+    .modal .card{min-width:280px;max-width:92vw;background:#0b1118;border:1px solid var(--line);border-radius:14px;padding:14px}
+    .modal h3{margin:0 0 8px 0;font-size:16px}
+    .modal p{margin:0 0 10px 0;color:var(--muted);font-size:13px}
+    .modal .row{justify-content:flex-end}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Arcana — Stage 1–3 (P2P)</h1>
+    <div class="scorebar">
+      <span class="pill">Draw: <b id="drawTag">0</b></span>
+      <span class="pill">Discard: <b id="discardTag">0</b></span>
+      <span class="pill">Turn: <b id="turnTag">—</b></span>
+      <span class="pill ok">P1: <b id="score1">0</b></span>
+      <span class="pill ok">P2: <b id="score2">0</b></span>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <!-- LEFT: Local controls -->
+    <div class="col">
+      <h2>Controls</h2>
+      <div class="panel">
+        <div class="controls">
+          <button id="btnConstruct" class="btn-accent">Construct</button>
+          <button id="btnAction">Play 6 / 7 / 9</button>
+          <button id="btnSigil">Play J / Q / K</button>
+          <button id="btnDiscard" class="btn-danger">Discard</button>
+        </div>
+        <div class="sep"></div>
+        <div class="piles">
+          <div class="pile"><span class="count-tag" id="drawCount"> </span><span class="label">Draw</span></div>
+          <div class="pile"><span class="count-tag" id="discardCount"> </span><span class="label">Discard</span></div>
+        </div>
+        <script>
+          // mirror small counters so header and badges both stay in sync
+          document.addEventListener('arcana:ready', ()=>{
+            const tagDraw=document.getElementById('drawTag');
+            const tagDiscard=document.getElementById('discardTag');
+            const c1=document.getElementById('drawCount');
+            const c2=document.getElementById('discardCount');
+            const mo=new MutationObserver(()=>{ c1.textContent=tagDraw.textContent; c2.textContent=tagDiscard.textContent; });
+            mo.observe(tagDraw,{childList:true}); mo.observe(tagDiscard,{childList:true});
+          });
+        </script>
+      </div>
+    </div>
+
+    <!-- MIDDLE: Board -->
+    <div class="col">
+      <h2>Board</h2>
+      <div class="panel grid">
+        <div class="zone" id="opponentZone">
+          <div class="group-title">Opponent Hand (<span id="oppCount">0</span>)</div>
+          <div class="group" id="opponentHand"></div>
+        </div>
+        <div class="sep"></div>
+        <div class="zone" id="playerZone">
+          <div class="group-title">Your Hand (<span id="youCount">0</span>)</div>
+          <div class="group hand" id="playerHand"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Network + Logs -->
+    <div class="col">
+      <h2>Network</h2>
+      <div class="panel">
+        <div class="row" style="gap:6px;flex-wrap:wrap">
+          <span class="pill" id="status">Idle</span>
+          <input id="signalUrl" value="wss://arcana-signal.onrender.com" style="flex:1;min-width:180px;background:#0c1219;border:1px solid #223040;border-radius:10px;color:var(--ink);padding:8px 10px;font-size:12px" />
+          <button id="btnUseUrl" class="btn-ghost">Use URL</button>
+        </div>
+        <div class="sep"></div>
+        <div class="grid two">
+          <div class="grid">
+            <div class="row">
+              <button id="btnHost" class="btn-accent">Host</button>
+              <div class="pill">ID: <b id="hostId">—</b></div>
+            </div>
+            <button id="btnStart">Start Game</button>
+            <button id="btnResync" class="btn-ghost">Re-sync</button>
+          </div>
+          <div class="grid">
+            <div class="row">
+              <input id="joinId" placeholder="Enter Host ID" style="flex:1;min-width:120px;background:#0c1219;border:1px solid #223040;border-radius:10px;color:var(--ink);padding:8px 10px;font-size:12px" />
+              <button id="btnJoin" class="btn-accent">Join</button>
+            </div>
+          </div>
+        </div>
+        <div class="sep"></div>
+        <div class="log" id="log"></div>
+        <div class="muted" style="margin-top:8px;font-size:12px">
+          Tip: select cards, then <b>Construct</b> (Pairs/Sets/Runs). Actions: <b>6</b>=Draw2, <b>7</b>=Steal random, <b>9</b>=Swap (drawer to choose your give). Aces can block 7/9 (defender decides). Jokers may require extra discards via drawer.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drawer: 9 “Give one” -->
+  <div id="giveDrawer" class="drawer" aria-hidden="true">
+    <header><h3>Choose a card to give (for 9)</h3><button id="giveClose" class="closex">✕</button></header>
+    <div class="content">
+      <div id="giveList" class="hand"></div>
+    </div>
+    <div class="footer">
+      <button id="giveCancel" class="btn-ghost">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Drawer: Joker Cost -->
+  <div id="jokerDrawer" class="drawer" aria-hidden="true">
+    <header><h3>Joker Cost</h3><button id="jokerClose" class="closex">✕</button></header>
+    <div class="content">
+      <p id="jokerInfo" class="muted">Select N extra card(s) to discard.</p>
+      <div id="jokerList" class="hand"></div>
+    </div>
+    <div class="footer">
+      <button id="jokerCancel" class="btn-ghost">Cancel</button>
+      <button id="jokerConfirm" class="btn-accent">Confirm</button>
+    </div>
+  </div>
+
+  <!-- Modal: Ace reaction (defender only) -->
+  <div id="aceModal" class="modal" aria-hidden="true">
+    <div class="card">
+      <h3>Ace Reaction</h3>
+      <p id="aceText">Opponent played an action targeting you. Use an Ace to block?</p>
+      <div class="row" style="gap:8px">
+        <button id="aceNo" class="btn-ghost">Let it resolve</button>
+        <button id="aceYes" class="btn-accent">Use Ace</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Engine + Transport -->
+  <script src="game.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
